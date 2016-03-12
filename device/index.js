@@ -190,23 +190,23 @@ function DeviceClient(options) {
    //
    //    +- - - - - - - - - - - - - - - - - - - - - - - - +
    //    |                                                |
-   //                                                      
-   //    |                    FILLING                     |         
-   //                                                      
+   //
+   //    |                    FILLING                     |
+   //
    //    |                                                |
-   //              +-----------------------------+         
+   //              +-----------------------------+
    //    |         |                             |        |
-   //              |                             |         
+   //              |                             |
    //    |         v                             |        |
    //    +- - Established                     Inactive - -+
    //    |         |                             ^        |
-   //              |                             |         
+   //              |                             |
    //    |         |                             |        |
-   //              +----------> Stable ----------+        
+   //              +----------> Stable ----------+
    //    |                                                |
-   //                                                      
-   //    |                     DRAINING                   |         
-   //                                                      
+   //
+   //    |                     DRAINING                   |
+   //
    //    |                                                |
    //    +- - - - - - - - - - - - - - - - - - - - - - - - +
    //
@@ -215,7 +215,7 @@ function DeviceClient(options) {
    //
    // During draining, existing subscriptions are re-sent,
    // followed by any publishes which occurred while offline.
-   //    
+   //
 
    //
    // Operation cache used during filling
@@ -229,7 +229,7 @@ function DeviceClient(options) {
    //
    // Subscription cache; active if autoResubscribe === true
    //
-   var activeSubscriptions = new Map();
+   var activeSubscriptions = new {};
    var autoResubscribe = true;
 
    //
@@ -249,23 +249,23 @@ function DeviceClient(options) {
    var drainTimeMs = 250;
 
    //
-   // These properties control the reconnect behavior of the MQTT Client.  If 
-   // the MQTT client becomes disconnected, it will attempt to reconnect after 
+   // These properties control the reconnect behavior of the MQTT Client.  If
+   // the MQTT client becomes disconnected, it will attempt to reconnect after
    // a quiet period; this quiet period doubles with each reconnection attempt,
-   // e.g. 1 seconds, 2 seconds, 2, 8, 16, 32, etc... up until a maximum 
+   // e.g. 1 seconds, 2 seconds, 2, 8, 16, 32, etc... up until a maximum
    // reconnection time is reached.
    //
-   // If a connection is active for the minimum connection time, the quiet 
+   // If a connection is active for the minimum connection time, the quiet
    // period is reset to the initial value.
    //
-   // baseReconnectTime: the time in seconds to wait before the first 
+   // baseReconnectTime: the time in seconds to wait before the first
    //     reconnect attempt
    //
-   // minimumConnectionTime: the time in seconds that a connection must be 
-   //     active before resetting the current reconnection time to the base 
+   // minimumConnectionTime: the time in seconds that a connection must be
+   //     active before resetting the current reconnection time to the base
    //     reconnection time
    //
-   // maximumReconnectTime: the maximum time in seconds to wait between 
+   // maximumReconnectTime: the maximum time in seconds to wait between
    //     reconnect attempts
    //
    // The defaults for these values are:
@@ -414,7 +414,7 @@ function DeviceClient(options) {
 
       //
       // Don't cache subscriptions if auto-resubscribe is disabled
-      // 
+      //
       if (autoResubscribe === false) {
          return;
       }
@@ -436,7 +436,7 @@ function DeviceClient(options) {
    }
 
    //
-   // Return true if the connection is currently in a 'filling' 
+   // Return true if the connection is currently in a 'filling'
    // state
    //
    function _filling() {
@@ -446,7 +446,7 @@ function DeviceClient(options) {
    function _wrapper(client) {
       if (options.protocol === 'wss') {
          //
-         // Access id and secret key are available, prepare URL. 
+         // Access id and secret key are available, prepare URL.
          //
          var url = prepareWebSocketUrl(options, awsAccessId, awsSecretKey, awsSTSToken);
 
@@ -465,7 +465,7 @@ function DeviceClient(options) {
 
    //
    // Timeout expiry function for the connection timer; once a connection
-   // is stable, reset the current reconnection time to the base value. 
+   // is stable, reset the current reconnection time to the base value.
    //
    function _markConnectionStable() {
       currentReconnectTimeMs = baseReconnectTimeMs;
@@ -506,8 +506,8 @@ function DeviceClient(options) {
 
       //
       // Handle our active subscriptions first, using an iterator
-      // for the subscription map.  
-      // 
+      // for the subscription map.
+      //
       var iterate = subscriptionIterator.next();
       if (!iterate.done) {
          var subscription = iterate.value; // 0:topic, 1:params
@@ -517,7 +517,7 @@ function DeviceClient(options) {
       } else {
          //
          // Then handle cached operations...
-         // 
+         //
          var operation = offlineOperations.shift();
 
          if (!isUndefined(operation)) {
@@ -535,7 +535,7 @@ function DeviceClient(options) {
          }
          if (offlineOperations.length === 0) {
             //
-            // The subscription and operation queues are fully drained, 
+            // The subscription and operation queues are fully drained,
             // cancel the draining timer.
             //
             clearInterval(drainingTimer);
@@ -558,14 +558,14 @@ function DeviceClient(options) {
       }
       connectionState = 'established';
       //
-      // If not already running, start the draining timer and 
+      // If not already running, start the draining timer and
       // clone the active subscriptions.
       //
-      if (drainingTimer === null) {
+      /*if (drainingTimer === null) {
          subscriptionIterator = activeSubscriptions[Symbol.iterator]();
          drainingTimer = setInterval(_drainOperationQueue,
             drainTimeMs);
-      }
+      }*/
       that.emit('connect');
    });
    device.on('close', function() {
@@ -589,7 +589,7 @@ function DeviceClient(options) {
       //
       // Update the current reconnect timeout; this will be the
       // next timeout value used if this connect attempt fails.
-      // 
+      //
       currentReconnectTimeMs = currentReconnectTimeMs * 2;
       currentReconnectTimeMs = Math.min(maximumReconnectTimeMs, currentReconnectTimeMs);
       device.options.reconnectPeriod = currentReconnectTimeMs;
@@ -612,7 +612,7 @@ function DeviceClient(options) {
    //
    this.publish = function(topic, message, options, callback) {
       //
-      // If filling or still draining, push this publish operation 
+      // If filling or still draining, push this publish operation
       // into the offline operations queue; otherwise, perform it
       // immediately.
       //
